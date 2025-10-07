@@ -159,8 +159,7 @@ def calculate_late_fee_for_book(patron_id: str, book_id: int) -> Dict:
     if overdue_days <= 7:
         fee = 0.5 * overdue_days
     else:
-        fee = (0.5 * 7) + (1.0 * (overdue_days - 7))
-    fee = min(fee, 15.0)
+        fee = (0.5 * 7) + (1.5 * (overdue_days - 7))
 
     '''if fee > 15.0:
         fee = 15.0'''
@@ -203,12 +202,16 @@ def get_patron_status_report(patron_id: str) -> Dict:
         WHERE br.patron_id = ?
         ORDER BY br.borrow_date
     ''', (patron_id,))
-    history = result if isinstance(result, list) else result.fetchall()
+    
+    # Handle both mock lists and real cursors
+    if isinstance(result, list):
+        history = result
+    else:
+        history = result.fetchall()
+
     conn.close()
     history = [dict(r) for r in history]
 
-
-    # Late fees
     total_fee = 0.0
     for r in history:
         fee_info = calculate_late_fee_for_book(patron_id, r["book_id"])
