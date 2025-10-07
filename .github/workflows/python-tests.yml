@@ -25,12 +25,15 @@ jobs:
         pip install -r requirements.txt
         pip install pytest
 
-    # ✅ NEW STEP: Create SQLite database schema for CI
+    # ✅ NEW STEP 1: Ensure SQLite database exists in workspace
     - name: Set up SQLite database
       run: |
+        mkdir -p $GITHUB_WORKSPACE
+        cd $GITHUB_WORKSPACE
         python - <<EOF
-        import sqlite3
-        conn = sqlite3.connect('library.db')
+        import sqlite3, os
+        db_path = os.path.join(os.getcwd(), "library.db")
+        conn = sqlite3.connect(db_path)
         c = conn.cursor()
         # Create 'books' table
         c.execute('''
@@ -56,6 +59,20 @@ jobs:
         ''')
         conn.commit()
         conn.close()
+        EOF
+
+    # ✅ NEW STEP 2: Optional — Initialize with sample data (if helper exists)
+    - name: Initialize sample data
+      run: |
+        python - <<EOF
+        try:
+            import database
+            if hasattr(database, "init_database"):
+                database.init_database()
+            if hasattr(database, "add_sample_data"):
+                database.add_sample_data()
+        except Exception as e:
+            print("Skipping optional sample data setup:", e)
         EOF
 
     - name: Run tests with pytest

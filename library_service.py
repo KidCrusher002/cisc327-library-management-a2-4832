@@ -159,9 +159,8 @@ def calculate_late_fee_for_book(patron_id: str, book_id: int) -> Dict:
     if overdue_days <= 7:
         fee = 0.5 * overdue_days
     else:
-        fee = 0.5 * 7 + 1.0 * (overdue_days - 7)
+        fee = (0.5 * 7) + (1.0 * (overdue_days - 7))
         fee = min(fee, 15.0)
-
 
     if fee > 15.0:
         fee = 15.0
