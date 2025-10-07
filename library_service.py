@@ -9,8 +9,13 @@ from database import (
     get_book_by_id, get_book_by_isbn, get_patron_borrow_count,
     insert_book, insert_borrow_record, update_book_availability,
     update_borrow_record_return_date, get_all_books, get_patron_borrowed_books,
-    get_db_connection
+    get_db_connection, init_database 
 )
+import os
+
+# Ensure DB exists before any operations
+if not os.path.exists("library.db"):
+    init_database()
 
 def add_book_to_catalog(title: str, author: str, isbn: str, total_copies: int) -> Tuple[bool, str]:
     """
@@ -151,18 +156,13 @@ def calculate_late_fee_for_book(patron_id: str, book_id: int) -> Dict:
         return {"fee_amount": 0.0, "days_overdue": 0, "status": "On time"}
 
     fee = 0.0
-    '''if overdue_days <= 7:
-        fee = overdue_days * 0.5
-    else:
-        fee = (7 * 0.5) + ((overdue_days - 7) * 1.0)'''
-
+    
     if overdue_days <= 7:
         fee = 0.5 * overdue_days
     else:
-        fee = (0.5 * 7) + (1.5 * (overdue_days - 7))
+        fee = (0.5 * 7) + (1.0 * (overdue_days - 7))
 
-    '''if fee > 15.0:
-        fee = 15.0'''
+    fee = min(fee, 15.0)
 
     return {
         "fee_amount": round(fee, 2),
@@ -202,12 +202,9 @@ def get_patron_status_report(patron_id: str) -> Dict:
         WHERE br.patron_id = ?
         ORDER BY br.borrow_date
     ''', (patron_id,))
-    
-    # Handle both mock lists and real cursors
-    if isinstance(result, list):
-        history = result
-    else:
-        history = result.fetchall()
+
+    # ✅ handle both list and sqlite cursor
+    history = result if isinstance(result, list) else result.fetchall()
 
     conn.close()
     history = [dict(r) for r in history]
