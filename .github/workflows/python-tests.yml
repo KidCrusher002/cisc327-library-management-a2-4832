@@ -25,17 +25,15 @@ jobs:
         pip install -r requirements.txt
         pip install pytest
 
-    # ✅ NEW STEP 1: Ensure SQLite database exists in workspace
+    # ✅ Ensure SQLite database exists in workspace root
     - name: Set up SQLite database
       run: |
-        mkdir -p $GITHUB_WORKSPACE
-        cd $GITHUB_WORKSPACE
         python - <<EOF
         import sqlite3, os
         db_path = os.path.join(os.getcwd(), "library.db")
+        print("Creating DB at:", db_path)
         conn = sqlite3.connect(db_path)
         c = conn.cursor()
-        # Create 'books' table
         c.execute('''
         CREATE TABLE IF NOT EXISTS books (
             id INTEGER PRIMARY KEY,
@@ -46,7 +44,6 @@ jobs:
             available_copies INTEGER NOT NULL
         )
         ''')
-        # Create 'borrow_records' table
         c.execute('''
         CREATE TABLE IF NOT EXISTS borrow_records (
             id INTEGER PRIMARY KEY,
@@ -59,20 +56,6 @@ jobs:
         ''')
         conn.commit()
         conn.close()
-        EOF
-
-    # ✅ NEW STEP 2: Optional — Initialize with sample data (if helper exists)
-    - name: Initialize sample data
-      run: |
-        python - <<EOF
-        try:
-            import database
-            if hasattr(database, "init_database"):
-                database.init_database()
-            if hasattr(database, "add_sample_data"):
-                database.add_sample_data()
-        except Exception as e:
-            print("Skipping optional sample data setup:", e)
         EOF
 
     - name: Run tests with pytest
