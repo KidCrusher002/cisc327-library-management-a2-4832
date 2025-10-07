@@ -25,6 +25,39 @@ jobs:
         pip install -r requirements.txt
         pip install pytest
 
+    # ✅ NEW STEP: Create SQLite database schema for CI
+    - name: Set up SQLite database
+      run: |
+        python - <<EOF
+        import sqlite3
+        conn = sqlite3.connect('library.db')
+        c = conn.cursor()
+        # Create 'books' table
+        c.execute('''
+        CREATE TABLE IF NOT EXISTS books (
+            id INTEGER PRIMARY KEY,
+            title TEXT NOT NULL,
+            author TEXT NOT NULL,
+            isbn TEXT UNIQUE NOT NULL,
+            total_copies INTEGER NOT NULL,
+            available_copies INTEGER NOT NULL
+        )
+        ''')
+        # Create 'borrow_records' table
+        c.execute('''
+        CREATE TABLE IF NOT EXISTS borrow_records (
+            id INTEGER PRIMARY KEY,
+            patron_id TEXT NOT NULL,
+            book_id INTEGER,
+            borrow_date TEXT NOT NULL,
+            due_date TEXT NOT NULL,
+            return_date TEXT
+        )
+        ''')
+        conn.commit()
+        conn.close()
+        EOF
+
     - name: Run tests with pytest
       run: |
         pytest -v
