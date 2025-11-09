@@ -42,12 +42,12 @@ def test_borrow_no_copies(monkeypatch):
 def test_borrow_limit_bug(monkeypatch):
     fake_book = {"id": 1, "title": "Book A", "available_copies": 1}
 
-    # Patch the functions from database module (not library_service)
     monkeypatch.setattr(database, "get_book_by_id", lambda id: fake_book)
     monkeypatch.setattr(database, "get_patron_borrow_count", lambda p: 5)  # Trigger limit
     monkeypatch.setattr(database, "insert_borrow_record", lambda p, b, d, due: True)
     monkeypatch.setattr(database, "update_book_availability", lambda b, c: True)
 
     success, msg = borrow_book_by_patron("123456", 1)
-    assert not success, "Bug: should fail at 5 books, but code allows it"
+    assert not success
     assert "maximum borrowing limit" in msg
+
